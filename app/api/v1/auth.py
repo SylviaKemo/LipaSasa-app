@@ -5,6 +5,8 @@ from app.core.security import create_access_token
 from app.db.session import get_db
 from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserResponse
 from app.services import auth_service
+from app.api.deps import get_current_user
+from app.models.user import User
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -30,3 +32,7 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
 
     token = create_access_token(str(user.id), str(user.merchant_id))
     return TokenResponse(access_token=token)
+
+@router.get("/me", response_model=UserResponse)
+def read_me(current_user: User = Depends(get_current_user)):
+    return current_user
