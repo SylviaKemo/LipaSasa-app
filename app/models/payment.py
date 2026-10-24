@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, func
+from sqlalchemy import CheckConstraint, UniqueConstraint, DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -10,6 +10,9 @@ class Payment(Base):
     __tablename__ = "payments"
     __table_args__ = (
         CheckConstraint("amount > 0", name="ck_payments_amount_positive"),
+        UniqueConstraint(
+            "merchant_id", "idempotency_key", name="uq_payments_merchant_idempotency_key"
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
@@ -22,6 +25,7 @@ class Payment(Base):
     reference: Mapped[str] = mapped_column(String(100))
     description: Mapped[str | None] = mapped_column(String(255))
     status: Mapped[str] = mapped_column(String(20), default="pending", index=True)
+    idempotency_key: Mapped[str | None] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
